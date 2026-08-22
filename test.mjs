@@ -331,6 +331,28 @@ test('entry point', async (t) => {
     assert.match(typo.stderr, /Unknown command: recovry/);
   });
 
+  await t.test('a fresh clone is told about .env before being told to log in', () => {
+    // whoop.mjs reads .env next to itself, so a copy in an empty directory is
+    // exactly the state someone is in right after cloning.
+    const dir = fs.mkdtempSync(path.join(os.tmpdir(), 'whoop-fresh-'));
+    try {
+      fs.copyFileSync(CLI, path.join(dir, 'whoop.mjs'));
+      const script = path.join(dir, 'whoop.mjs');
+
+      const bare = spawnSync(process.execPath, [script, 'summary'], { encoding: 'utf8' });
+      assert.equal(bare.status, 1);
+      assert.match(bare.stderr, /No WHOOP credentials found/,
+        'without .env the first instruction must be to create it, not to log in');
+
+      fs.writeFileSync(path.join(dir, '.env'), 'WHOOP_CLIENT_ID=x\nWHOOP_CLIENT_SECRET=y\n');
+      const configured = spawnSync(process.execPath, [script, 'summary'], { encoding: 'utf8' });
+      assert.equal(configured.status, 1);
+      assert.match(configured.stderr, /Not logged in/);
+    } finally {
+      fs.rmSync(dir, { recursive: true, force: true });
+    }
+  });
+
   await t.test('importing it does not start the CLI', () => {
     const out = execFileSync(
       process.execPath,

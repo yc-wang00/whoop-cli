@@ -102,6 +102,10 @@ async function requestTokens(form) {
 
 let tokens = null;
 async function accessToken() {
+  // Check credentials first: on a fresh clone the real problem is a missing
+  // .env, and "run login" would just send you to the same error one step later.
+  const { clientId, clientSecret } = credentials();
+
   tokens ??= readTokens();
   if (!tokens) fail('Not logged in. Run:  node whoop.mjs login');
 
@@ -109,7 +113,6 @@ async function accessToken() {
   if (Date.now() < expiresAt) return tokens.access_token;
 
   if (!tokens.refresh_token) fail('Session expired. Run:  node whoop.mjs login');
-  const { clientId, clientSecret } = credentials();
   tokens = saveTokens(await requestTokens({
     grant_type: 'refresh_token',
     refresh_token: tokens.refresh_token,
