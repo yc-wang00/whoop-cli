@@ -118,7 +118,7 @@ async function accessToken() {
     refresh_token: tokens.refresh_token,
     client_id: clientId,
     client_secret: clientSecret,
-    scope: 'offline', // WHOOP only returns a new refresh token if we ask again
+    scope: SCOPES.join(' '), // must re-request the full grant, not just 'offline' — a narrower scope here narrows the new access token
   }));
   return tokens.access_token;
 }
