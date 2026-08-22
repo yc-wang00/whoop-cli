@@ -1,0 +1,5 @@
+.env
+.whoop-tokens.json
+*.local.md
+*-week.json
+node_modules/

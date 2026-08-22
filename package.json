@@ -1,0 +1,42 @@
+{
+  "name": "whoop-cli",
+  "version": "1.0.0",
+  "description": "Read your WHOOP data from the terminal. One file, no dependencies.",
+  "type": "module",
+  "main": "whoop.mjs",
+  "bin": {
+    "whoop": "whoop.mjs"
+  },
+  "files": [
+    "whoop.mjs",
+    "README.md",
+    "PRIVACY.md",
+    "LICENSE"
+  ],
+  "scripts": {
+    "test": "node test.mjs"
+  },
+  "engines": {
+    "node": ">=18"
+  },
+  "license": "MIT",
+  "author": "Yicheng Wang",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/yc-wang00/whoop-cli.git"
+  },
+  "homepage": "https://github.com/yc-wang00/whoop-cli#readme",
+  "bugs": {
+    "url": "https://github.com/yc-wang00/whoop-cli/issues"
+  },
+  "keywords": [
+    "whoop",
+    "health",
+    "fitness",
+    "recovery",
+    "sleep",
+    "hrv",
+    "cli",
+    "oauth"
+  ]
+}
