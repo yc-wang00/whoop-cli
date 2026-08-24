@@ -115,6 +115,14 @@ async function requestTokens(form) {
 }
 
 let tokens = null;
+// Commands like `me` and `summary` fire several `get()` calls at once via
+// Promise.all, each independently calling accessToken(). If the token is
+// expired, every one of them would otherwise start its own refresh request
+// with the same refresh_token — WHOOP rotates it on the first request that
+// lands, so every other concurrent request then gets rejected. Caching the
+// in-flight refresh so concurrent callers await the same one closes that race.
+let refreshing = null;
+
 async function accessToken() {
   // Check credentials first: on a fresh clone the real problem is a missing
   // .env, and "run login" would just send you to the same error one step later.
@@ -127,13 +135,15 @@ async function accessToken() {
   if (Date.now() < expiresAt) return tokens.access_token;
 
   if (!tokens.refresh_token) fail('Session expired. Run:  node whoop.mjs login');
-  tokens = saveTokens(await requestTokens({
+
+  refreshing ??= requestTokens({
     grant_type: 'refresh_token',
     refresh_token: tokens.refresh_token,
     client_id: clientId,
     client_secret: clientSecret,
-    scope: SCOPES.join(' '), // must re-request the full grant, not just 'offline' — a narrower scope here narrows the new access token
-  }));
+  }).then(saveTokens).finally(() => { refreshing = null; });
+
+  tokens = await refreshing;
   return tokens.access_token;
 }
 
