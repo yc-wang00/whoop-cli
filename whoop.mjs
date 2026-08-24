@@ -89,15 +89,29 @@ function saveTokens(tokens) {
   return stored;
 }
 
+/**
+ * A 5xx here means WHOOP's own OAuth server hiccuped mid-request — unlike a
+ * normal API 5xx, we don't know whether it processed the grant (and rotated
+ * the refresh token) before failing to respond. Retrying quickly, before
+ * anything else touches this refresh_token, is the best chance of recovering
+ * without forcing the user back through the browser.
+ */
 async function requestTokens(form) {
-  const res = await fetch(TOKEN_URL, {
-    method: 'POST',
-    headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
-    body: new URLSearchParams(form),
-  });
-  const body = await res.text();
-  if (!res.ok) throw new Error(`WHOOP rejected the token request (${res.status}): ${body}`);
-  return JSON.parse(body);
+  for (let attempt = 0; ; attempt++) {
+    const res = await fetch(TOKEN_URL, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+      body: new URLSearchParams(form),
+    });
+    const body = await res.text();
+    if (res.ok) return JSON.parse(body);
+
+    if (res.status >= 500 && attempt < 3) {
+      await sleep(Math.min(1000 * 2 ** attempt, 8000));
+      continue;
+    }
+    throw new Error(`WHOOP rejected the token request (${res.status}): ${body}`);
+  }
 }
 
 let tokens = null;
